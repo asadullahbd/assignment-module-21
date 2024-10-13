@@ -5,24 +5,32 @@ import { JWT_EXPIRE_TIME } from "../config/config.js";
 
 export const register = async (req, res) => {
     try {
+        const studentExist = await studentModel.findOne({
+            email: req.body.email,
+        });
+        if (studentExist) {
+            throw new Error(`this user already exist. login`);
+        }
+        if(!req.body.name || !req.body.email || !req.body.password || !req.body.age || !req.body.roll){
+            throw new Error(`All fields are required : name, email, password, age, roll`);
+        }
         const hashedPassword = await bcrypt.hash(req.body.password, 10);
         req.body.password = hashedPassword;
         const data = await studentModel.create(req.body);
         if (!data) {
-            return res.json({
-                status: "error",
-                message: "server error occurred",
-            });
-        } else {
-            return res.json({ status: "success", data });
+            throw new Error(`something wrong. registration not successful`);
         }
+        res.json({ status: "success", data });
     } catch (error) {
-        return res.json({ status: "fail", error: error.toString() });
+        return res.json({ status: false, error: error.message});
     }
 };
 
 export const login = async (req, res) => {
     try {
+        if(!req.body.email || !req.body.password){
+            throw new Error(`email and password are required`);
+        }
         const userAggregation = await studentModel.aggregate([
             {
                 $match: {
@@ -37,7 +45,7 @@ export const login = async (req, res) => {
             },
         ]);
         if (userAggregation.length === 0) {
-            return res.json({ status: "fail", message: "user not found" });
+            throw Error(`user not found`)
         }
 
         const isMatch = await bcrypt.compare(
@@ -45,7 +53,7 @@ export const login = async (req, res) => {
             userAggregation[0].password
         );
         if (!isMatch) {
-            return res.json({ status: "fail", message: "invalid password" });
+            throw Error(`invalid password`)
         }
         const token = tokenSign(
             userAggregation[0]["email"],
@@ -63,9 +71,9 @@ export const login = async (req, res) => {
             status: "success",
             message: "login successful",
             token: token,
-            tokenMadeBy : `email: ${userAggregation[0]["email"]},_id: ${userAggregation[0]["_id"]}`
+            tokenMadeBy: `email: ${userAggregation[0]["email"]},_id: ${userAggregation[0]["_id"]}`,
         });
     } catch (error) {
-        return res.json({ status: "fail", error: error.toString() });
+        return res.json({ status: false, error: error.message });
     }
 };

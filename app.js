@@ -3,6 +3,9 @@ import mongoose from 'mongoose';
 import router from './routes/api.js';
 import cookieParser from 'cookie-parser';
 import { DATABASE, PORT } from './app/config/config.js';
+import fileUpload from 'express-fileupload';
+
+
 
 const app = express();
 
@@ -10,8 +13,10 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(fileUpload());
 
 // Routes
+app.use(express.static("./app/uploads"));
 app.use("/api",router);
 
 

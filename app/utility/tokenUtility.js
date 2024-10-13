@@ -2,7 +2,7 @@ import { JWT_KEY } from "../config/config.js";
 import jwt from "jsonwebtoken";
 
 export const tokenSign = (email, id) => {
-    const token = jwt.sign({ email: email, id: id }, JWT_KEY);
+    const token = jwt.sign({ email, id }, JWT_KEY);
     return token;
 };
 

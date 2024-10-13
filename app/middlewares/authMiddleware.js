@@ -1,17 +1,28 @@
-import { JWT_KEY } from "../config/config.js";
-import jwt from "jsonwebtoken"
-import { tokenVerify } from "../utility/tokenUtility.js";
+import { JWT_EXPIRE_TIME } from "../config/config.js";
+import { tokenSign, tokenVerify } from "../utility/tokenUtility.js";
 
-export const authMiddleware = (req, res, next) =>{
-    const token = req.cookies["Token"];
-    if(!token){
-        return res.status(401).json({message: 'Unauthorized access'});
-    }
+export const authMiddleware = (req, res, next) => {
     try {
+        const token = req.cookies["Token"];
+        if (!token) {
+            throw new Error(`invalid token`);
+        }
+
         const decoded = tokenVerify(token);
+        if (!decoded) {
+            throw new Error(`invalid token`);
+        }
         req.student = decoded;
+        //refresh token
+        const refreshToken = tokenSign(req.student.email, req.student.id);
+        res.cookie("Token", refreshToken, {
+            maxAge: JWT_EXPIRE_TIME * 24 * 60 * 60 * 1000,
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+        });
         next();
     } catch (error) {
-        return res.status(403).json({message:"invalid_token"});
+        return res.status(403).json({ message: error.message });
     }
-}
+};

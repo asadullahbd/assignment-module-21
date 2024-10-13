@@ -13,6 +13,10 @@ const fileNameSchema = new mongoose.Schema(
         fileType: {
             type: String,
             required: true
+        },
+        user : {
+            type : String,
+            required: true
         }
     },
     {
